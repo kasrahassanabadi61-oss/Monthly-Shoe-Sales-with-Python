@@ -1,0 +1,79 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+from sklearn.linear_model import LinearRegression
+
+# ------------------------------
+# Step 1: Create sample sales data
+# ------------------------------
+np.random.seed(42)
+
+dates = pd.date_range(start="2024-01-01", end="2024-06-30", freq="W")
+products = ["Sneakers", "Boots", "Sandals", "Loafers"]
+
+data = {
+    "Date": np.random.choice(dates, 60),
+    "Product": np.random.choice(products, 60),
+    "Price": np.random.randint(40, 150, 60),
+    "Sales": np.random.randint(10, 100, 60),
+}
+
+df = pd.DataFrame(data)
+df.sort_values("Date", inplace=True)
+df.reset_index(drop=True, inplace=True)
+
+print("Data sample:")
+print(df.head())
+
+# ------------------------------
+# Step 2: General data overview
+# ------------------------------
+print("\nGeneral Statistics:")
+print(df.describe())
+
+# ------------------------------
+# Step 3: Total sales per product
+# ------------------------------
+product_sales = df.groupby("Product")["Sales"].sum().sort_values(ascending=False)
+best_product = product_sales.idxmax()
+worst_product = product_sales.idxmin()
+
+print(f"\nBest-selling product: {best_product} ({product_sales[best_product]} units)")
+print(f"Worst-selling product: {worst_product} ({product_sales[worst_product]} units)")
+
+# ------------------------------
+# Step 4: Monthly sales analysis
+# ------------------------------
+df["Month"] = df["Date"].dt.to_period("M")
+monthly_sales = df.groupby("Month")["Sales"].sum().reset_index()
+monthly_sales["Month"] = monthly_sales["Month"].astype(str)
+
+print("\nMonthly Sales:")
+print(monthly_sales)
+
+# ------------------------------
+# Step 5: Predict next month's sales (simple linear regression)
+# ------------------------------
+X = np.arange(len(monthly_sales)).reshape(-1, 1)
+y = monthly_sales["Sales"].values
+model = LinearRegression()
+model.fit(X, y)
+
+next_month = np.array([[len(monthly_sales)]])
+predicted_sales = model.predict(next_month)[0]
+
+print(f"\nPredicted sales for next month: {int(predicted_sales)} units")
+
+# ------------------------------
+# Step 6: Visualization
+# ------------------------------
+plt.figure(figsize=(10,5))
+plt.plot(monthly_sales["Month"], monthly_sales["Sales"], marker="o", label="Actual Sales")
+plt.axhline(predicted_sales, color='r', linestyle='--', label="Predicted Next Month")
+plt.title("Monthly Shoe Sales")
+plt.xlabel("Month")
+plt.ylabel("Units Sold")
+plt.legend()
+plt.grid(True)
+plt.show()
